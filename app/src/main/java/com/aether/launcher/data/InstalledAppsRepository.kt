@@ -1,0 +1,59 @@
+package com.aether.launcher.data
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import com.aether.launcher.data.model.AppCategory
+import com.aether.launcher.data.model.AppItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
+
+class InstalledAppsRepository(private val context: Context) {
+
+    private val _installedApps = MutableStateFlow<List<AppItem>>(emptyList())
+    val installedApps: StateFlow<List<AppItem>> = _installedApps.asStateFlow()
+
+    suspend fun loadInstalledApps() = withContext(Dispatchers.IO) {
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN, null).apply {
+            addCategory(Intent.CATEGORY_LAUNCHER)
+        }
+
+        val resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+        val appList = resolveInfos.mapNotNull { resolveInfo ->
+            val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
+            val packageName = activityInfo.packageName
+            val className = activityInfo.name
+            val label = resolveInfo.loadLabel(pm).toString()
+            val icon = resolveInfo.loadIcon(pm)
+
+            val category = when {
+                packageName.contains("youtube") || packageName.contains("spotify") || packageName.contains("music") || packageName.contains("photos") -> AppCategory.MEDIA
+                packageName.contains("message") || packageName.contains("talk") || packageName.contains("mail") || packageName.contains("chat") || packageName.contains("social") -> AppCategory.SOCIAL
+                packageName.contains("doc") || packageName.contains("keep") || packageName.contains("note") || packageName.contains("drive") || packageName.contains("calendar") -> AppCategory.PRODUCTIVITY
+                else -> AppCategory.UTILITIES
+            }
+
+            AppItem(
+                packageName = packageName,
+                className = className,
+                label = label,
+                icon = icon,
+                category = category
+            )
+        }.sortedBy { it.label.lowercase() }
+
+        _installedApps.value = appList
+    }
+
+    fun launchApp(app: AppItem) {
+        val intent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        }
+    }
+}
