@@ -1,0 +1,51 @@
+name: Android Versioned Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Sign Release APK (Optional)
+        id: sign_app
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Decoding release keystore..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+            $ANDROID_HOME/build-tools/35.0.0/apksigner sign \
+              --ks release.keystore \
+              --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+              --ks-key-alias ${{ secrets.KEY_ALIAS }} \
+              --key-pass pass:${{ secrets.KEY_PASSWORD }} \
+              app/build/outputs/apk/release/app-release-unsigned.apk || true
+          else
+            echo "No signing secret provided. Uploading unsigned release APK."
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
