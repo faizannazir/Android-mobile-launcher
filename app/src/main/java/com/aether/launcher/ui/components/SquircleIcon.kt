@@ -2,7 +2,6 @@ package com.aether.launcher.ui.components
 
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +18,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -45,7 +46,14 @@ fun SquircleIcon(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                contentDescription = if (label.isNotEmpty()) "Launch $label" else "Application icon"
+            }
+            .clickable(
+                onClick = onClick,
+                onClickLabel = "Launch $label"
+            )
             .padding(4.dp)
     ) {
         Box(
@@ -62,13 +70,13 @@ fun SquircleIcon(
             if (iconDrawable != null) {
                 Image(
                     bitmap = iconDrawable.toBitmap().asImageBitmap(),
-                    contentDescription = label,
+                    contentDescription = null,
                     modifier = Modifier.size(size * 0.65f)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Rounded.Android,
-                    contentDescription = label,
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(size * 0.6f)
                 )

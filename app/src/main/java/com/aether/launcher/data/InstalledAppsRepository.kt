@@ -3,6 +3,9 @@ package com.aether.launcher.data
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.collection.LruCache
 import com.aether.launcher.data.model.AppCategory
 import com.aether.launcher.data.model.AppItem
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +18,13 @@ class InstalledAppsRepository(private val context: Context) {
 
     private val _installedApps = MutableStateFlow<List<AppItem>>(emptyList())
     val installedApps: StateFlow<List<AppItem>> = _installedApps.asStateFlow()
+
+    // Icon bitmap cache to prevent redundant PackageItemInfo.loadIcon allocations
+    private val iconCache = object : LruCache<String, Bitmap>(50 * 1024 * 1024) { // 50MB max
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return value.byteCount
+        }
+    }
 
     suspend fun loadInstalledApps() = withContext(Dispatchers.IO) {
         val pm = context.packageManager

@@ -1,8 +1,13 @@
 package com.aether.launcher
 
+import android.app.Activity
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,11 +15,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.aether.launcher.data.widget.WidgetHostManager
 import com.aether.launcher.ui.screens.AppDrawerScreen
 import com.aether.launcher.ui.screens.CustomizationSheet
 import com.aether.launcher.ui.screens.FolderModal
 import com.aether.launcher.ui.screens.HomeScreen
 import com.aether.launcher.ui.screens.SearchOverlay
+import com.aether.launcher.ui.screens.WidgetPickerSheet
 import com.aether.launcher.ui.theme.AetherLauncherTheme
 import com.aether.launcher.viewmodel.LauncherScreen
 import com.aether.launcher.viewmodel.LauncherViewModel
@@ -22,26 +29,60 @@ import com.aether.launcher.viewmodel.LauncherViewModel
 class MainActivity : ComponentActivity() {
 
     private val viewModel: LauncherViewModel by viewModels()
+    private lateinit var widgetHostManager: WidgetHostManager
+
+    private var pendingWidgetInfo: AppWidgetProviderInfo? = null
+
+    private val bindWidgetLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+            if (appWidgetId != -1 && pendingWidgetInfo != null) {
+                configureOrAddWidget(appWidgetId, pendingWidgetInfo!!)
+            }
+        }
+    }
+
+    private val configWidgetLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val appWidgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
+            if (appWidgetId != -1 && pendingWidgetInfo != null) {
+                val widgetItem = widgetHostManager.createWidgetLayoutItem(
+                    position = 0,
+                    appWidgetId = appWidgetId,
+                    info = pendingWidgetInfo!!
+                )
+                viewModel.addWidgetToPage(widgetItem, viewModel.uiState.value.activePageIndex)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        widgetHostManager = WidgetHostManager(applicationContext)
 
         setContent {
             val state by viewModel.uiState.collectAsState()
 
             AetherLauncherTheme(darkTheme = state.isDarkTheme) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    // Base Home Screen
                     HomeScreen(
                         state = state,
+                        appWidgetManager = widgetHostManager.appWidgetManager,
+                        appWidgetHost = widgetHostManager.appWidgetHost,
                         onAppClick = { viewModel.launchApp(it) },
                         onAppDrawerClick = { viewModel.openScreen(LauncherScreen.APP_DRAWER) },
                         onSearchClick = { viewModel.openScreen(LauncherScreen.SEARCH_OVERLAY) },
                         onFolderClick = { viewModel.openFolder(it) },
-                        onLongPressEdit = { viewModel.openScreen(LauncherScreen.EDIT_MODE) }
+                        onOpenEditMode = { viewModel.toggleCustomizationSheet(true) },
+                        onStartDrag = { item, page, pos -> viewModel.startDrag(item, page, pos) },
+                        onDropItem = { pos -> viewModel.dropDraggedItem(pos) }
                     )
 
-                    // App Drawer Overlay
                     if (state.currentScreen == LauncherScreen.APP_DRAWER) {
                         AppDrawerScreen(
                             state = state,
@@ -54,7 +95,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // App Search Overlay
                     if (state.currentScreen == LauncherScreen.SEARCH_OVERLAY) {
                         SearchOverlay(
                             state = state,
@@ -67,7 +107,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Active Folder Modal
                     state.activeFolder?.let { folder ->
                         FolderModal(
                             folder = folder,
@@ -80,7 +119,6 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Customization Sheet Overlay
                     if (state.isCustomizationSheetOpen) {
                         Box(
                             contentAlignment = Alignment.BottomCenter,
@@ -95,11 +133,73 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+
+                    if (state.isWidgetSheetOpen) {
+                        Box(
+                            contentAlignment = Alignment.BottomCenter,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            WidgetPickerSheet(
+                                providers = widgetHostManager.getInstalledProviders(),
+                                isDarkTheme = state.isDarkTheme,
+                                isBlurEnabled = state.isBlurEnabled,
+                                onProviderSelect = { provider ->
+                                    viewModel.toggleWidgetSheet(false)
+                                    requestAddWidget(provider)
+                                },
+                                onClose = { viewModel.toggleWidgetSheet(false) }
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        widgetHostManager.startListening()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        widgetHostManager.stopListening()
+    }
+
+    private fun requestAddWidget(info: AppWidgetProviderInfo) {
+        pendingWidgetInfo = info
+        val appWidgetId = widgetHostManager.allocateAppWidgetId()
+        val canBind = widgetHostManager.appWidgetManager.bindAppWidgetIdIfAllowed(appWidgetId, info.provider)
+
+        if (canBind) {
+            configureOrAddWidget(appWidgetId, info)
+        } else {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, info.provider)
+            }
+            bindWidgetLauncher.launch(intent)
+        }
+    }
+
+    private fun configureOrAddWidget(appWidgetId: Int, info: AppWidgetProviderInfo) {
+        if (info.configure != null) {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
+                component = info.configure
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            configWidgetLauncher.launch(intent)
+        } else {
+            val widgetItem = widgetHostManager.createWidgetLayoutItem(
+                position = 0,
+                appWidgetId = appWidgetId,
+                info = info
+            )
+            viewModel.addWidgetToPage(widgetItem, viewModel.uiState.value.activePageIndex)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (viewModel.uiState.value.currentScreen != LauncherScreen.HOME) {
             viewModel.openScreen(LauncherScreen.HOME)
