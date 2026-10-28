@@ -3,6 +3,8 @@ package com.aether.launcher.viewmodel
 import com.aether.launcher.data.model.AppCategory
 import com.aether.launcher.data.model.AppItem
 import com.aether.launcher.data.model.FolderItem
+import com.aether.launcher.data.model.HomeLayoutItem
+import com.aether.launcher.data.model.PageData
 
 enum class LauncherScreen {
     HOME,
@@ -11,13 +13,23 @@ enum class LauncherScreen {
     EDIT_MODE
 }
 
+data class DragState(
+    val draggedItem: HomeLayoutItem? = null,
+    val sourcePage: Int = 0,
+    val sourcePosition: Int = -1,
+    val currentHoverPosition: Int = -1,
+    val targetFolderId: String? = null
+)
+
 data class LauncherState(
     val currentScreen: LauncherScreen = LauncherScreen.HOME,
     val installedApps: List<AppItem> = emptyList(),
+    val pages: List<PageData> = listOf(PageData(0, emptyList())),
+    val activePageIndex: Int = 0,
     val dockApps: List<AppItem> = emptyList(),
-    val homeGridApps: List<AppItem> = emptyList(),
     val folders: List<FolderItem> = emptyList(),
     val activeFolder: FolderItem? = null,
+    val dragState: DragState = DragState(),
     val isCustomizationSheetOpen: Boolean = false,
     val isWidgetSheetOpen: Boolean = false,
     val searchQuery: String = "",

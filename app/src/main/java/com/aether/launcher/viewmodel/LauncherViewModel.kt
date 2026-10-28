@@ -7,9 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.aether.launcher.data.AppSearchEngine
 import com.aether.launcher.data.HomePreferences
 import com.aether.launcher.data.InstalledAppsRepository
+import com.aether.launcher.data.LayoutPersistence
 import com.aether.launcher.data.model.AppCategory
 import com.aether.launcher.data.model.AppItem
 import com.aether.launcher.data.model.FolderItem
+import com.aether.launcher.data.model.HomeLayoutItem
+import com.aether.launcher.data.model.PageData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +27,7 @@ class LauncherViewModel(
 
     private val repository = InstalledAppsRepository(application)
     private val preferences = HomePreferences(application)
+    private val layoutPersistence = LayoutPersistence(application)
     private val searchEngine = AppSearchEngine()
 
     private val _uiState = MutableStateFlow(LauncherState())
@@ -36,24 +40,32 @@ class LauncherViewModel(
 
         viewModelScope.launch {
             repository.installedApps.collectLatest { apps ->
-                val defaultDock = apps.take(5)
-                val defaultHomeGrid = apps.drop(5).take(8)
-
                 _uiState.update { current ->
+                    val defaultDock = apps.take(5)
+                    val defaultPageItems = apps.drop(5).take(8).mapIndexed { index, app ->
+                        HomeLayoutItem.App(
+                            id = "app_${app.packageName}",
+                            position = index,
+                            packageName = app.packageName,
+                            className = app.className
+                        )
+                    }
+
                     current.copy(
                         installedApps = apps,
                         dockApps = if (current.dockApps.isEmpty()) defaultDock else current.dockApps,
-                        homeGridApps = if (current.homeGridApps.isEmpty()) defaultHomeGrid else current.homeGridApps,
-                        folders = if (current.folders.isEmpty()) {
-                            listOf(
-                                FolderItem(
-                                    id = "folder_1",
-                                    title = "Social & Media",
-                                    appPackages = apps.take(6).map { it.packageName }
-                                )
-                            )
-                        } else current.folders
+                        pages = if (current.pages.firstOrNull()?.items.isNullOrEmpty()) {
+                            listOf(PageData(0, defaultPageItems))
+                        } else current.pages
                     )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            layoutPersistence.pagesFlow.collectLatest { savedPages ->
+                if (savedPages.isNotEmpty()) {
+                    _uiState.update { it.copy(pages = savedPages) }
                 }
             }
         }
@@ -87,6 +99,10 @@ class LauncherViewModel(
         _uiState.update { it.copy(currentScreen = screen) }
     }
 
+    fun setActivePageIndex(index: Int) {
+        _uiState.update { it.copy(activePageIndex = index) }
+    }
+
     fun onSearchQueryChanged(query: String) {
         val results = searchEngine.search(query, _uiState.value.installedApps)
         _uiState.update { it.copy(searchQuery = query, searchResults = results) }
@@ -106,14 +122,110 @@ class LauncherViewModel(
 
     fun updateFolderTitle(folderId: String, newTitle: String) {
         _uiState.update { current ->
-            val updated = current.folders.map {
-                if (it.id == folderId) it.copy(title = newTitle) else it
+            val updatedPages = current.pages.map { page ->
+                val newItems = page.items.map { item ->
+                    if (item is HomeLayoutItem.Folder && item.id == folderId) {
+                        item.copy(title = newTitle)
+                    } else item
+                }
+                page.copy(items = newItems)
             }
             current.copy(
-                folders = updated,
+                pages = updatedPages,
                 activeFolder = current.activeFolder?.takeIf { it.id == folderId }?.copy(title = newTitle) ?: current.activeFolder
             )
         }
+        saveCurrentLayout()
+    }
+
+    fun startDrag(item: HomeLayoutItem, pageIndex: Int, position: Int) {
+        _uiState.update {
+            it.copy(
+                dragState = DragState(
+                    draggedItem = item,
+                    sourcePage = pageIndex,
+                    sourcePosition = position,
+                    currentHoverPosition = position
+                )
+            )
+        }
+    }
+
+    fun updateHoverPosition(position: Int) {
+        _uiState.update { current ->
+            current.copy(dragState = current.dragState.copy(currentHoverPosition = position))
+        }
+    }
+
+    fun dropDraggedItem(targetPosition: Int) {
+        val current = _uiState.value
+        val drag = current.dragState
+        val draggedItem = drag.draggedItem ?: return
+
+        val page = current.pages.getOrNull(drag.sourcePage) ?: return
+        val existingAtTarget = page.items.find { it.position == targetPosition }
+
+        val newItems = page.items.toMutableList()
+
+        if (existingAtTarget != null && existingAtTarget is HomeLayoutItem.App && draggedItem is HomeLayoutItem.App && existingAtTarget.id != draggedItem.id) {
+            // Drop App onto App -> Auto-create Folder
+            newItems.remove(draggedItem)
+            newItems.remove(existingAtTarget)
+            val newFolder = HomeLayoutItem.Folder(
+                id = "folder_${System.currentTimeMillis()}",
+                position = targetPosition,
+                title = "New Folder",
+                appPackages = listOf(existingAtTarget.packageName, draggedItem.packageName)
+            )
+            newItems.add(newFolder)
+        } else {
+            // Reorder item
+            newItems.remove(draggedItem)
+            val moved = when (draggedItem) {
+                is HomeLayoutItem.App -> draggedItem.copy(position = targetPosition)
+                is HomeLayoutItem.Folder -> draggedItem.copy(position = targetPosition)
+                is HomeLayoutItem.Widget -> draggedItem.copy(position = targetPosition)
+            }
+            newItems.add(moved)
+        }
+
+        val updatedPages = current.pages.mapIndexed { idx, p ->
+            if (idx == drag.sourcePage) p.copy(items = newItems) else p
+        }
+
+        _uiState.update { it.copy(pages = updatedPages, dragState = DragState()) }
+        saveCurrentLayout()
+    }
+
+    fun cancelDrag() {
+        _uiState.update { it.copy(dragState = DragState()) }
+    }
+
+    fun addWidgetToPage(widget: HomeLayoutItem.Widget, pageIndex: Int) {
+        _uiState.update { current ->
+            val page = current.pages.getOrNull(pageIndex) ?: PageData(pageIndex)
+            val newItems = page.items.toMutableList()
+            newItems.add(widget)
+            val updatedPages = current.pages.toMutableList()
+            if (pageIndex < updatedPages.size) {
+                updatedPages[pageIndex] = page.copy(items = newItems)
+            } else {
+                updatedPages.add(page.copy(items = newItems))
+            }
+            current.copy(pages = updatedPages)
+        }
+        saveCurrentLayout()
+    }
+
+    fun removeLayoutItem(item: HomeLayoutItem, pageIndex: Int) {
+        _uiState.update { current ->
+            val page = current.pages.getOrNull(pageIndex) ?: return@update current
+            val newItems = page.items.filterNot { it.id == item.id }
+            val updatedPages = current.pages.toMutableList()
+            updatedPages[pageIndex] = page.copy(items = newItems)
+            current.copy(pages = updatedPages)
+        }
+        saveCurrentLayout()
     }
 
     fun toggleCustomizationSheet(open: Boolean) {
@@ -142,5 +254,11 @@ class LauncherViewModel(
 
     fun launchApp(app: AppItem) {
         repository.launchApp(app)
+    }
+
+    private fun saveCurrentLayout() {
+        viewModelScope.launch {
+            layoutPersistence.savePages(_uiState.value.pages)
+        }
     }
 }
