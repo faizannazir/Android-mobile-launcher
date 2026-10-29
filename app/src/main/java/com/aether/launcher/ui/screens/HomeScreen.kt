@@ -21,8 +21,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Icon
@@ -43,6 +41,8 @@ import com.aether.launcher.data.model.HomeLayoutItem
 import com.aether.launcher.glass.GlassLevel
 import com.aether.launcher.glass.glassSurface
 import com.aether.launcher.ui.components.FloatingDock
+import com.aether.launcher.ui.components.HarmonyServiceWidget
+import com.aether.launcher.ui.components.SmartFolder2x2
 import com.aether.launcher.ui.components.SquircleIcon
 import com.aether.launcher.ui.components.WidgetHostContainer
 import com.aether.launcher.viewmodel.LauncherState
@@ -99,7 +99,7 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Architectural Header: Badge & Status Telemetry
+            // HarmonyOS Header: Date & Weather Glance
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,40 +107,10 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(Color(0xFF00FBFF), RoundedCornerShape(3.dp))
-                    )
-                    Text(
-                        text = "  PIXEL // AETHER SPATIAL CORE",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                }
-
                 Text(
-                    text = "TUE / OCT 24",
+                    text = "Tuesday, October 24",
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.White.copy(alpha = 0.9f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Architectural Dot-Matrix Clock & Weather Row
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            ) {
-                Text(
-                    text = "10:08",
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 76.sp, fontWeight = FontWeight.Bold),
-                    color = Color.White
                 )
 
                 Row(
@@ -161,42 +131,22 @@ fun HomeScreen(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = " 72° • AQI 18",
+                        text = " 72° Sunny · AQI 18",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Spatial Media / Telemetry Capsule
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .glassSurface(
-                        level = GlassLevel.SUBTLE,
-                        isDarkTheme = state.isDarkTheme,
-                        blurEnabled = state.isBlurEnabled,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.GraphicEq,
-                    contentDescription = "Media",
-                    tint = Color(0xFF00FBFF),
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = "  Chromatics · Liquid Mirror  |  Pixel Buds 92%",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            // HarmonyOS Free-Standing Clock
+            Text(
+                text = "10:08",
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 82.sp, fontWeight = FontWeight.Light),
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -230,7 +180,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Main Tactile Liquid-Glass App Grid (4x5 positions)
+            // Main Tactile Grid (4x5 positions: 0..19)
             val gridPositions = (0..19).toList()
 
             LazyVerticalGrid(
@@ -273,46 +223,34 @@ fun HomeScreen(
                                 }
                             }
                             is HomeLayoutItem.Folder -> {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier
-                                        .clickable {
-                                            onFolderClick(
-                                                FolderItem(
-                                                    id = layoutItem.id,
-                                                    title = layoutItem.title,
-                                                    appPackages = layoutItem.appPackages
-                                                )
+                                SmartFolder2x2(
+                                    folder = FolderItem(
+                                        id = layoutItem.id,
+                                        title = layoutItem.title,
+                                        appPackages = layoutItem.appPackages
+                                    ),
+                                    installedApps = state.installedApps,
+                                    isDarkTheme = state.isDarkTheme,
+                                    isBlurEnabled = state.isBlurEnabled,
+                                    onAppClick = onAppClick,
+                                    onOpenFolderModal = {
+                                        onFolderClick(
+                                            FolderItem(
+                                                id = layoutItem.id,
+                                                title = layoutItem.title,
+                                                appPackages = layoutItem.appPackages
                                             )
-                                        }
-                                        .padding(4.dp)
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .size(56.dp)
-                                            .glassSurface(
-                                                level = GlassLevel.BALANCED,
-                                                isDarkTheme = state.isDarkTheme,
-                                                blurEnabled = state.isBlurEnabled,
-                                                shape = RoundedCornerShape(22.dp)
-                                            )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Folder,
-                                            contentDescription = layoutItem.title,
-                                            tint = Color(0xFF00FBFF),
-                                            modifier = Modifier.size(28.dp)
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = layoutItem.title,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = textColor,
-                                        maxLines = 1
-                                    )
-                                }
+                                )
+                            }
+                            is HomeLayoutItem.ServiceWidget -> {
+                                HarmonyServiceWidget(
+                                    widgetItem = layoutItem,
+                                    isDarkTheme = state.isDarkTheme,
+                                    isBlurEnabled = state.isBlurEnabled,
+                                    onToggleFocus = {}
+                                )
                             }
                             is HomeLayoutItem.Widget -> {
                                 if (appWidgetManager != null && appWidgetHost != null) {

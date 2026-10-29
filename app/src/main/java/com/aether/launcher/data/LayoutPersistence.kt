@@ -83,6 +83,13 @@ class LayoutPersistence(private val context: Context) {
                         item.appPackages.forEach { pkgsArray.put(it) }
                         itemObj.put("appPackages", pkgsArray)
                     }
+                    is HomeLayoutItem.ServiceWidget -> {
+                        itemObj.put("type", "SERVICE_WIDGET")
+                        itemObj.put("title", item.title)
+                        itemObj.put("subtitle", item.subtitle)
+                        itemObj.put("isFocusActive", item.isFocusActive)
+                        itemObj.put("isMuted", item.isMuted)
+                    }
                     is HomeLayoutItem.Widget -> {
                         itemObj.put("type", "WIDGET")
                         itemObj.put("appWidgetId", item.appWidgetId)
@@ -141,6 +148,18 @@ class LayoutPersistence(private val context: Context) {
                                     position = position,
                                     title = title,
                                     appPackages = pkgs
+                                )
+                            )
+                        }
+                        "SERVICE_WIDGET" -> {
+                            items.add(
+                                HomeLayoutItem.ServiceWidget(
+                                    id = id,
+                                    position = position,
+                                    title = itemObj.optString("title", "Smart Schedule"),
+                                    subtitle = itemObj.optString("subtitle", "Design Sync · 10:30 AM"),
+                                    isFocusActive = itemObj.optBoolean("isFocusActive", true),
+                                    isMuted = itemObj.optBoolean("isMuted", false)
                                 )
                             )
                         }
