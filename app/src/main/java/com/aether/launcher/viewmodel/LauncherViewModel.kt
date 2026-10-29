@@ -277,6 +277,15 @@ class LauncherViewModel(
         viewModelScope.launch { preferences.setGridColumns(grid) }
     }
 
+
+    fun registerPackageReceiver() {
+        repository.registerPackageReceiver()
+    }
+
+    fun unregisterPackageReceiver() {
+        repository.unregisterPackageReceiver()
+    }
+
     fun launchApp(app: AppItem) {
         repository.launchApp(app)
     }
