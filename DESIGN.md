@@ -1,54 +1,59 @@
-# Aether Launcher — Design System Specification
+# Aether Launcher — Design System & Visual Specification
 
 ## 1. Product Design Principles
-Aether Launcher is a lightweight, premium Android launcher optimized for Google Pixel phones. Its core design philosophy rests on three pillars:
+Aether Launcher is an original, premium, lightweight Android launcher built specifically for Google Pixel flagships running Android 14+. It synthesizes:
 
-1. **Spatial Elegance & Physical Glass Physics:** Surfaces behave like precision-milled acoustic glass—weightless, airy, and translucent. Abstract pastel wallpaper tones filter softly through refractive substrate layers, while razor-sharp deep charcoal typography guarantees immediate legibility.
-2. **Wallpaper-First Composition:** The wallpaper is the visual hero. Interface elements float naturally over the canvas without covering it in heavy, opaque cards.
-3. **Zero-Friction Pixel Ergonomics:** Native to Android 14+ gesture navigation, strict system inset awareness, and comfortable 48dp+ touch targets.
-
----
-
-## 2. Approved Visual Directions & References
-- **Huawei HarmonyOS:** Spatial depth, multi-layered glass materials, translucent floating surfaces, and optical light caustics.
-- **Google Pixel / Material You:** Wallpaper-first composition, readable geometry, dynamic color extraction, and zero-latency usability.
-- **Nothing OS:** Distinctive typographical voice, restrained visual character, and clean layout grid.
+1. **Spatial Elegance & Physical Glass Physics (HarmonyOS Influence):** Surfaces mimic precision-milled acoustic sapphire glass—weightless, airy, and translucent. Abstract pastel and mercury wallpaper tones filter softly through refractive substrate layers with real caustics and 1px specular highlights.
+2. **Wallpaper-First Composition (Pixel Influence):** Interface elements float naturally over the canvas without covering it in heavy, opaque cards. Oversized clock typography and weather pills sit directly on the wallpaper with subtle ambient drop shadows for optimal contrast.
+3. **Architectural Technical Character (Nothing OS Influence):** Distinctive, geometric dot-matrix/monospace typography for time displays, telemetry badges, and micro-labels, establishing a memorable, futuristic brand identity.
+4. **Zero-Friction Pixel Ergonomics:** Native edge-to-edge layout, strict system inset awareness (`WindowInsets.statusBars` and `WindowInsets.navigationBars`), and comfortable 48dp+ touch targets.
 
 ---
 
-## 3. Approved Stitch UI Screens Matrix
+## 2. Approved Visual Direction: Direction C (Distinctive Aether)
 
-| Screen Role | Approved Screen Title in Stitch | Key Aesthetic Features |
+After exploring three distinct concepts in Google Stitch:
+- **Direction A (Pixel Refined):** Light, airy porcelain/crystal museum-grade theme.
+- **Direction B (Atmospheric Minimalism):** Dark Nordic aurora borealis landscape photo theme.
+- **Direction C (Distinctive Aether — WINNER):** Asymmetrical spatial composition, liquid mercury/glass caustics wallpaper, architectural dot-matrix clock (`10:08`), spatial audio/telemetry header capsule, and liquid glass squircle grid.
+
+Direction C was chosen as the flagship direction because it provides an immediately recognizable, expensive visual identity while maintaining 100% daily usability and high Jetpack Compose implementation feasibility.
+
+---
+
+## 3. Approved Stitch UI Screen Set Matrix
+
+| Screen Role | Approved Screen Name in Stitch | Key Aesthetic Features |
 | :--- | :--- | :--- |
-| **Flagship Home Screen** | `Aether Launcher — Flagship Crystal Home Screen` | Oversized `10:08` clock, 3D glass wallpaper, 4x2 squircle grid, floating glass dock. |
-| **App Drawer** | `Pixel Harmony App Drawer` | Full-screen glass overlay, persistent search, category chips (*Social, Media*), 4-column app grid. |
-| **App Search** | `Pixel Harmony Search Overlay` | Active search input with blinking cursor, categorized live results (*Top Matches, Actions, Contacts*), Gboard dark glass. |
+| **Flagship Home Screen** | `Concept C — Aether Spatial Glass Home Screen` | Asymmetrical dot-matrix clock, telemetry header badge, liquid glass 4x2 grid, floating glass dock. |
+| **App Drawer** | `Pixel Harmony App Drawer` | Full-screen glass overlay, persistent search field (`"Search 128 apps & shortcuts..."`), category filter chips, 4-column grid. |
+| **App Search Overlay** | `Pixel Harmony Search Overlay` | Active search field with blinking cursor, categorized live results (*Top Matches, Actions, Contacts*), dark glass Gboard. |
 | **Expanded Folder Modal** | `Pixel Harmony — Social & Media Folder Modal` | Centered floating glass container, inline edit pencil, `+ Add` button, 3x3 squircle grid with badges. |
-| **Home Screen Edit Mode** | `Aether Launcher — Home Screen Edit Mode` | Scaled perspective card, 4x5 grid alignment lines, resize/drag handles, floating glass action toolbar. |
+| **Home Screen Edit Mode** | `Aether Launcher — Home Screen Edit Mode` | Scaled perspective card, 4x5 grid alignment lines, drag handles, floating glass action toolbar. |
 | **Widget Placement Sheet** | `Aether Launcher — Widgets & Glanceables Sheet` | Frosted bottom sheet, search input, categorized widget cards (*Glance 4x2, Battery 2x2*) with `+ Add` buttons. |
-| **Customization & Settings** | `Aether Launcher — Customization & Settings` | Theme selection cards (*Dark Glass, Light Glass, Dynamic*), Glass Blur Intensity slider (0-100%), GPU Acceleration toggle. |
-| **Light Theme Variant** | `Concept A — Crystal Harmony Home Screen` | Luminous, airy glass over light pastel 3D crystal sculpture wallpaper. |
-| **Dark Theme Variant** | `Concept B — Aurora Home Screen` | Cinematic Nordic aurora wallpaper with deep indigo sky and dark frosted glass overlays. |
-| **Experimental Direction** | `Concept C — Liquid Space Home Screen` | Avant-garde asymmetrical layout with suspended mercury chrome and optical glass caustics. |
+| **Customization & Settings** | `Aether Launcher — Customization & Settings` | Theme selection cards (*Dark Glass, Light Glass, Dynamic Material You*), Glass Blur Intensity slider (0-100%), GPU Acceleration toggle. |
+| **Light Theme Variant** | `Direction A — Pixel Refined Home Screen` | Luminous, airy glass over light pastel 3D crystal sculpture wallpaper. |
+| **Dark Theme Variant** | `Direction B — Atmospheric Aurora Home Screen` | Cinematic Nordic aurora wallpaper with deep indigo sky and dark frosted glass overlays. |
 
 ---
 
 ## 4. Color Palette & Semantic Tokens
 
 ### Base & Accent Palette
-- **Obsidian Slate (Primary Text/Icons):** `#191c1e` (Light Mode) / `#e1e2eb` (Dark Mode).
-- **Electric Sky (Secondary Accent):** `#2563eb` / `#8ab4f8`.
-- **Luminous Orchid (Tertiary Accent):** `#ec4899` / `#c58af9`.
-- **Crystalline Pearl (Neutral Light Base):** `#f8fafc`.
+- **Obsidian Slate (Primary Text/Icons):** `#191C1E` (Light Mode) / `#E1E2EB` (Dark Mode).
+- **Electric Cyan (Primary Spatial Accent):** `#00FBFF`.
+- **Pixel Frost Blue (Secondary Accent):** `#8AB4F8`.
+- **Radiant Iris / Orchid (Tertiary Accent):** `#C58AF9` / `#EC4899`.
+- **Crystalline Pearl (Neutral Light Base):** `#F8FAFC`.
 - **Deep Obsidian (Neutral Dark Base):** `#101319`.
 
 ### Semantic Tokens
 - `color.surface.glass.light`: `rgba(255, 255, 255, 0.68)`
 - `color.surface.glass.dark`: `rgba(16, 19, 25, 0.78)`
 - `color.border.specular`: `rgba(255, 255, 255, 0.85)`
-- `color.text.primary`: `#191c1e`
+- `color.text.primary`: `#191C1E` (Light) / `#E1E2EB` (Dark)
 - `color.text.secondary`: `rgba(25, 28, 30, 0.65)`
-- `color.text.inverse`: `#f8fafc`
+- `color.accent.cyan`: `#00FBFF`
 
 ---
 
@@ -57,7 +62,7 @@ Aether Launcher is a lightweight, premium Android launcher optimized for Google 
 The launcher defines three reusable material levels:
 
 ### Level 1: Subtle Glass
-- **Intended Usage:** At-a-Glance weather/date chips, micro badges, inactive category chips.
+- **Intended Usage:** Telemetry headers, At-a-Glance weather/date chips, micro badges, inactive category chips.
 - **Opacity:** `rgba(255, 255, 255, 0.45)` (Light) / `rgba(255, 255, 255, 0.08)` (Dark).
 - **Blur Behavior:** `backdrop-filter: blur(16px)`.
 - **Border:** `1px solid rgba(255, 255, 255, 0.40)`.
@@ -86,14 +91,14 @@ The launcher defines three reusable material levels:
 
 | Token Name | Family | Size (sp) | Line Height (sp) | Weight | Tracking |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `display.hero.clock` | Plus Jakarta Sans / Google Sans | 72 | 76 | 300 (Light) | -0.04em |
+| `display.hero.clock` | Monospace (Dot-Matrix Style) | 76 | 80 | 700 (Bold) | -0.04em |
 | `headline.lg` | Plus Jakarta Sans | 32 | 38 | 600 (SemiBold) | -0.02em |
 | `headline.md` | Plus Jakarta Sans | 22 | 28 | 600 (SemiBold) | -0.015em |
-| `title.sm` | Plus Jakarta Sans | 16 | 22 | 600 (SemiBold) | -0.01em |
+| `title.sm` | Monospace | 14 | 20 | 700 (Bold) | 0.08em |
 | `body.lg` | Plus Jakarta Sans / Inter | 16 | 24 | 400 (Regular) | 0em |
 | `body.md` | Plus Jakarta Sans / Inter | 14 | 20 | 400 (Regular) | 0em |
 | `label.md` | Plus Jakarta Sans | 12 | 16 | 600 (SemiBold) | 0.02em |
-| `label.sm` | Plus Jakarta Sans | 11 | 14 | 500 (Medium) | 0.03em |
+| `label.small` | Monospace | 10 | 14 | 500 (Medium) | 0.05em |
 
 ---
 
@@ -113,35 +118,9 @@ The launcher defines three reusable material levels:
 - `radius.xl`: `32dp` (Folder modals, bottom sheet tops)
 - `radius.full`: `9999dp` (Capsule dock, search field pills, action buttons)
 
-### Grid Metrics
-- **Desktop Grid:** 4 columns × 5 rows (Compact) / 5 columns × 5 rows (Standard).
-- **Icon Sizing:** 56dp × 56dp icon target with 48dp minimum hit zone.
-- **Dock Elevation:** 16dp above navigation gesture bar.
-
 ---
 
-## 8. Layout Specifications
-
-### A. Home Screen
-- **Status Bar:** Inset `24dp` top padding; time, 5G, Wi-Fi, battery.
-- **Upper Glance Zone:** Unbounded clock digits `10:08` floating over wallpaper, paired with date line and compact weather pill (`72° Sunny`).
-- **App Grid:** 4x2 matrix of squircle icons with clean 12sp labels and subtle drop shadows.
-- **Dock:** Floating capsule pill holding 5 apps (*Phone, Chat, Chrome, Camera, App Drawer*).
-
-### B. App Drawer
-- **Scrim:** Full-screen Level 3 glass overlay over blurred wallpaper.
-- **Search:** Top capsule input field with `"Search 128 apps & shortcuts..."`.
-- **Category Chips:** Horizontal scrollable list (*All, Social, Productivity, Media, Utilities*).
-- **Frequent Apps:** Top quick-launch row of 4 icons.
-- **App Matrix:** 4-column alphabetical grid with right-side A-Z fast scrubber.
-
-### C. Search & Folders
-- **Search Overlay:** Instant live results categorized into *Top Matches*, *App Actions*, *Contacts*, and *Web Suggestions*, anchored above dark glass Gboard.
-- **Expanded Folder:** Centered floating Level 3 glass card (`320dp` width) with 3x3 app grid, title, edit pencil, and `+ Add` button.
-
----
-
-## 9. Motion & Animation Language
+## 8. Motion & Animation Language
 
 - **App Drawer Opening:** Vertical spring transition (`dampingRatio = 0.8f`, `stiffness = 350f`) with linear Gaussian blur scale from 0 to 32dp.
 - **Folder Expansion:** Shared element scale transform from 56dp squircle icon to 320dp centered glass modal card with 150ms wallpaper dimming.
@@ -150,7 +129,7 @@ The launcher defines three reusable material levels:
 
 ---
 
-## 10. Accessibility & Android Constraints
+## 9. Accessibility & System Constraints
 
 - **WCAG 2.1 AA Compliance:** Minimum 4.5:1 text contrast guaranteed via wallpaper ambient shadow underlays and dynamic scrims.
 - **Touch Targets:** Minimum 48dp × 48dp hit zones for all interactive buttons and icons.
