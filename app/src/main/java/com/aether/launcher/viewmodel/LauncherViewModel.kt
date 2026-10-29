@@ -42,12 +42,38 @@ class LauncherViewModel(
             repository.installedApps.collectLatest { apps ->
                 _uiState.update { current ->
                     val defaultDock = apps.take(5)
-                    val defaultPageItems = apps.drop(5).take(8).mapIndexed { index, app ->
-                        HomeLayoutItem.App(
-                            id = "app_${app.packageName}",
-                            position = index,
-                            packageName = app.packageName,
-                            className = app.className
+                    val defaultPageItems = mutableListOf<HomeLayoutItem>()
+
+                    // HarmonyOS 2x2 Service Widget at position 0
+                    defaultPageItems.add(
+                        HomeLayoutItem.ServiceWidget(
+                            id = "service_widget_schedule",
+                            position = 0,
+                            title = "Design Sync · 10:30 AM",
+                            subtitle = "Conf Room 4 · Live Progress",
+                            isFocusActive = true
+                        )
+                    )
+
+                    // HarmonyOS 2x2 Smart Folder at position 1
+                    defaultPageItems.add(
+                        HomeLayoutItem.Folder(
+                            id = "folder_social",
+                            position = 1,
+                            title = "Social & Media",
+                            appPackages = apps.take(4).map { it.packageName }
+                        )
+                    )
+
+                    // Remaining apps
+                    apps.drop(4).take(8).forEachIndexed { index, app ->
+                        defaultPageItems.add(
+                            HomeLayoutItem.App(
+                                id = "app_${app.packageName}",
+                                position = index + 2,
+                                packageName = app.packageName,
+                                className = app.className
+                            )
                         )
                     }
 
@@ -168,7 +194,6 @@ class LauncherViewModel(
         val newItems = page.items.toMutableList()
 
         if (existingAtTarget != null && existingAtTarget is HomeLayoutItem.App && draggedItem is HomeLayoutItem.App && existingAtTarget.id != draggedItem.id) {
-            // Drop App onto App -> Auto-create Folder
             newItems.remove(draggedItem)
             newItems.remove(existingAtTarget)
             val newFolder = HomeLayoutItem.Folder(
@@ -179,11 +204,11 @@ class LauncherViewModel(
             )
             newItems.add(newFolder)
         } else {
-            // Reorder item
             newItems.remove(draggedItem)
             val moved = when (draggedItem) {
                 is HomeLayoutItem.App -> draggedItem.copy(position = targetPosition)
                 is HomeLayoutItem.Folder -> draggedItem.copy(position = targetPosition)
+                is HomeLayoutItem.ServiceWidget -> draggedItem.copy(position = targetPosition)
                 is HomeLayoutItem.Widget -> draggedItem.copy(position = targetPosition)
             }
             newItems.add(moved)

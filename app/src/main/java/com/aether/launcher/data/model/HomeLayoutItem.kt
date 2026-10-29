@@ -18,6 +18,15 @@ sealed class HomeLayoutItem {
         val appPackages: List<String>
     ) : HomeLayoutItem()
 
+    data class ServiceWidget(
+        override val id: String,
+        override val position: Int,
+        val title: String,
+        val subtitle: String,
+        val isFocusActive: Boolean = true,
+        val isMuted: Boolean = false
+    ) : HomeLayoutItem()
+
     data class Widget(
         override val id: String,
         override val position: Int,
