@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Icon
@@ -44,7 +45,6 @@ import com.aether.launcher.glass.glassSurface
 import com.aether.launcher.ui.components.FloatingDock
 import com.aether.launcher.ui.components.SquircleIcon
 import com.aether.launcher.ui.components.WidgetHostContainer
-import com.aether.launcher.viewmodel.LauncherScreen
 import com.aether.launcher.viewmodel.LauncherState
 
 @Composable
@@ -63,23 +63,23 @@ fun HomeScreen(
     val backgroundBrush = if (state.isDarkTheme) {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF101319),
-                Color(0xFF181C28),
-                Color(0xFF101319)
+                Color(0xFF0F141B),
+                Color(0xFF1B2027),
+                Color(0xFF0F141B)
             )
         )
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFFF7F9FB),
-                Color(0xFFE9D5FF),
-                Color(0xFFDBEAFE),
-                Color(0xFFF7F9FB)
+                Color(0xFF384A5C),
+                Color(0xFF5B6E80),
+                Color(0xFFC2B29A),
+                Color(0xFF384A5C)
             )
         )
     }
 
-    val textColor = if (state.isDarkTheme) Color.White else Color(0xFF191C1E)
+    val textColor = Color.White
     val activePage = state.pages.getOrNull(state.activePageIndex) ?: state.pages.firstOrNull()
 
     Box(
@@ -97,54 +97,110 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Upper Section: Clock & Date
-            Text(
-                text = "Tuesday, October 24",
-                style = MaterialTheme.typography.titleSmall,
-                color = textColor.copy(alpha = 0.8f)
-            )
+            // Architectural Header: Badge & Status Telemetry
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(Color(0xFF00FBFF), RoundedCornerShape(3.dp))
+                    )
+                    Text(
+                        text = "  PIXEL // AETHER SPATIAL CORE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "10:08",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 80.sp, fontWeight = FontWeight.Light),
-                color = textColor
-            )
+                Text(
+                    text = "TUE / OCT 24",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Weather Pill
+            // Architectural Dot-Matrix Clock & Weather Row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                Text(
+                    text = "10:08",
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 76.sp, fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .glassSurface(
+                            level = GlassLevel.SUBTLE,
+                            isDarkTheme = state.isDarkTheme,
+                            blurEnabled = state.isBlurEnabled,
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.WbSunny,
+                        contentDescription = "Sunny",
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = " 72° • AQI 18",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Spatial Media / Telemetry Capsule
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
                     .glassSurface(
                         level = GlassLevel.SUBTLE,
                         isDarkTheme = state.isDarkTheme,
                         blurEnabled = state.isBlurEnabled,
-                        shape = RoundedCornerShape(20.dp)
+                        shape = RoundedCornerShape(16.dp)
                     )
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.WbSunny,
-                    contentDescription = "Sunny",
-                    tint = Color(0xFFF59E0B),
+                    imageVector = Icons.Rounded.GraphicEq,
+                    contentDescription = "Media",
+                    tint = Color(0xFF00FBFF),
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = "  72° • Sunny · AQI 22",
+                    text = "  Chromatics · Liquid Mirror  |  Pixel Buds 92%",
                     style = MaterialTheme.typography.labelSmall,
-                    color = textColor
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Search Bar
+            // Google Search Capsule Bar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -162,19 +218,19 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Rounded.Search,
                     contentDescription = "Search",
-                    tint = textColor.copy(alpha = 0.6f)
+                    tint = Color.White.copy(alpha = 0.7f)
                 )
                 Text(
-                    text = "  Search apps & web...",
+                    text = "  Search apps, contacts, web...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = textColor.copy(alpha = 0.6f),
+                    color = Color.White.copy(alpha = 0.7f),
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Grid Section (4x5 positions: 0..19)
+            // Main Tactile Liquid-Glass App Grid (4x5 positions)
             val gridPositions = (0..19).toList()
 
             LazyVerticalGrid(
@@ -186,7 +242,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                itemsIndexed(gridPositions) { index, position ->
+                itemsIndexed(gridPositions) { _, position ->
                     val layoutItem = activePage?.items?.find { it.position == position }
 
                     Box(
@@ -245,7 +301,7 @@ fun HomeScreen(
                                         Icon(
                                             imageVector = Icons.Rounded.Folder,
                                             contentDescription = layoutItem.title,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = Color(0xFF00FBFF),
                                             modifier = Modifier.size(28.dp)
                                         )
                                     }
@@ -270,7 +326,6 @@ fun HomeScreen(
                                 }
                             }
                             null -> {
-                                // Empty Grid Cell / Drop Target
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -286,11 +341,11 @@ fun HomeScreen(
                 }
             }
 
-            // Page Dots
+            // Page Indicator Dots
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 state.pages.forEachIndexed { idx, _ ->
                     val isActive = idx == state.activePageIndex
@@ -298,7 +353,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(if (isActive) 8.dp else 6.dp)
                             .background(
-                                color = if (isActive) textColor else textColor.copy(alpha = 0.3f),
+                                color = if (isActive) Color(0xFF00FBFF) else Color.White.copy(alpha = 0.3f),
                                 shape = RoundedCornerShape(4.dp)
                             )
                     )
