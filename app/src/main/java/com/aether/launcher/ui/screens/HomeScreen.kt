@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -21,12 +22,17 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -46,6 +52,92 @@ import com.aether.launcher.ui.components.SmartFolder2x2
 import com.aether.launcher.ui.components.SquircleIcon
 import com.aether.launcher.ui.components.WidgetHostContainer
 import com.aether.launcher.viewmodel.LauncherState
+import kotlinx.coroutines.delay
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+@Composable
+fun GlanceClockHeader(
+    isDarkTheme: Boolean,
+    isBlurEnabled: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000L)
+            currentTime = LocalDateTime.now()
+        }
+    }
+
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()) }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
+
+    val dateString = remember(currentTime.dayOfYear, currentTime.year) {
+        currentTime.format(dateFormatter)
+    }
+    val timeString = remember(currentTime.minute, currentTime.hour) {
+        currentTime.format(timeFormatter)
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        ) {
+            Text(
+                text = dateString,
+                style = MaterialTheme.typography.titleSmall,
+                color = Color.White.copy(alpha = 0.95f)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .glassSurface(
+                        level = GlassLevel.SUBTLE,
+                        isDarkTheme = isDarkTheme,
+                        blurEnabled = isBlurEnabled,
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Schedule,
+                    contentDescription = "System Clock",
+                    tint = Color(0xFF00FBFF),
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "  Aether",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = timeString,
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 82.sp,
+                fontWeight = FontWeight.Light,
+                letterSpacing = (-2).sp
+            ),
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+    }
+}
 
 @Composable
 fun HomeScreen(
@@ -58,7 +150,8 @@ fun HomeScreen(
     onFolderClick: (FolderItem) -> Unit,
     onOpenEditMode: () -> Unit,
     onStartDrag: (HomeLayoutItem, Int, Int) -> Unit,
-    onDropItem: (Int) -> Unit
+    onDropItem: (Int) -> Unit,
+    onToggleServiceWidgetFocus: (String) -> Unit = {}
 ) {
     val backgroundBrush = if (state.isDarkTheme) {
         Brush.verticalGradient(
@@ -71,15 +164,14 @@ fun HomeScreen(
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF384A5C),
-                Color(0xFF5B6E80),
-                Color(0xFFC2B29A),
-                Color(0xFF384A5C)
+                Color(0xFF1E293B),
+                Color(0xFF334155),
+                Color(0xFF475569),
+                Color(0xFF1E293B)
             )
         )
     }
 
-    val textColor = Color.White
     val activePage = state.pages.getOrNull(state.activePageIndex) ?: state.pages.firstOrNull()
 
     Box(
@@ -87,6 +179,7 @@ fun HomeScreen(
             .fillMaxSize()
             .background(backgroundBrush)
             .statusBarsPadding()
+            .navigationBarsPadding()
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = { onOpenEditMode() }
@@ -99,58 +192,15 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // HarmonyOS Header: Date & Weather Glance
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            ) {
-                Text(
-                    text = "Tuesday, October 24",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .glassSurface(
-                            level = GlassLevel.SUBTLE,
-                            isDarkTheme = state.isDarkTheme,
-                            blurEnabled = state.isBlurEnabled,
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.WbSunny,
-                        contentDescription = "Sunny",
-                        tint = Color(0xFFF59E0B),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = " 72° Sunny · AQI 18",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // HarmonyOS Free-Standing Clock
-            Text(
-                text = "10:08",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 82.sp, fontWeight = FontWeight.Light),
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 24.dp)
+            // Real Device Time & Date Header
+            GlanceClockHeader(
+                isDarkTheme = state.isDarkTheme,
+                isBlurEnabled = state.isBlurEnabled
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Google Search Capsule Bar
+            // Search Capsule Bar
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -168,12 +218,12 @@ fun HomeScreen(
                 Icon(
                     imageVector = Icons.Rounded.Search,
                     contentDescription = "Search",
-                    tint = Color.White.copy(alpha = 0.7f)
+                    tint = Color.White.copy(alpha = 0.8f)
                 )
                 Text(
                     text = "  Search apps, contacts, web...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.8f),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -249,7 +299,7 @@ fun HomeScreen(
                                     widgetItem = layoutItem,
                                     isDarkTheme = state.isDarkTheme,
                                     isBlurEnabled = state.isBlurEnabled,
-                                    onToggleFocus = {}
+                                    onToggleFocus = { onToggleServiceWidgetFocus(layoutItem.id) }
                                 )
                             }
                             is HomeLayoutItem.Widget -> {
@@ -298,14 +348,14 @@ fun HomeScreen(
                 }
             }
 
-            // Floating Glass Dock
+            // Floating Dock
             FloatingDock(
                 dockApps = state.dockApps,
                 onAppClick = onAppClick,
                 onAppDrawerClick = onAppDrawerClick,
                 isDarkTheme = state.isDarkTheme,
                 isBlurEnabled = state.isBlurEnabled,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
         }
     }
