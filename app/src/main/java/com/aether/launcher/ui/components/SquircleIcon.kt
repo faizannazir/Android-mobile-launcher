@@ -63,18 +63,18 @@ fun SquircleIcon(
         }
     }
 
-    val labelColor = if (isDarkTheme) Color.White else Color.White
+    val accessibleDescription = if (label.isNotEmpty()) "Launch $label" else "Application icon"
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .semantics(mergeDescendants = true) {
                 role = Role.Button
-                contentDescription = if (label.isNotEmpty()) "Launch $label" else "Application icon"
+                contentDescription = accessibleDescription
             }
             .clickable(
                 onClick = onClick,
-                onClickLabel = if (label.isNotEmpty()) "Launch $label" else "Launch app"
+                onClickLabel = accessibleDescription
             )
             .padding(2.dp)
     ) {
@@ -117,7 +117,7 @@ fun SquircleIcon(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = labelColor,
+                color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center

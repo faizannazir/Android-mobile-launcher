@@ -2,6 +2,7 @@ package com.aether.launcher.ui.components
 
 import android.content.Intent
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -151,7 +152,7 @@ fun HarmonyServiceWidget(
                                 }
                                 context.startActivity(intent)
                             } catch (e: Exception) {
-                                e.printStackTrace()
+                                Toast.makeText(context, "Unable to open Settings", Toast.LENGTH_SHORT).show()
                             }
                         }
                         .glassSurface(

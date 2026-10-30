@@ -53,7 +53,7 @@ fun FloatingDock(
         // App icons in dock (up to 4)
         dockApps.take(4).forEach { app ->
             SquircleIcon(
-                label = "",
+                label = app.label,
                 iconDrawable = app.icon,
                 onClick = { onAppClick(app) },
                 showLabel = false,
@@ -70,18 +70,18 @@ fun FloatingDock(
                 .size(50.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(if (isDarkTheme) Color(0x33FFFFFF) else Color(0x26FFFFFF))
+                .semantics(mergeDescendants = true) {
+                    role = Role.Button
+                    contentDescription = "Open App Drawer"
+                }
                 .clickable(
                     onClick = onAppDrawerClick,
                     onClickLabel = "Open App Drawer"
                 )
-                .semantics {
-                    role = Role.Button
-                    contentDescription = "Open App Drawer"
-                }
         ) {
             Icon(
                 imageVector = Icons.Rounded.GridView,
-                contentDescription = "App Drawer",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(28.dp)
             )

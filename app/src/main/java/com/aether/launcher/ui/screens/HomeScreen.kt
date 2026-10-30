@@ -2,6 +2,10 @@ package com.aether.launcher.ui.screens
 
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -63,26 +67,69 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+object ClockFormatter {
+    fun formatTime(
+        time: LocalDateTime,
+        is24Hour: Boolean,
+        locale: Locale = Locale.getDefault()
+    ): String {
+        val pattern = if (is24Hour) "HH:mm" else "h:mm"
+        return time.format(DateTimeFormatter.ofPattern(pattern, locale))
+    }
+
+    fun formatDate(
+        time: LocalDateTime,
+        locale: Locale = Locale.getDefault()
+    ): String {
+        return time.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", locale))
+    }
+
+    fun calculateMillisToNextMinute(time: LocalDateTime): Long {
+        val seconds = time.second
+        val millis = time.nano / 1_000_000
+        return ((60 - seconds) * 1000L - millis).coerceAtLeast(100L)
+    }
+}
+
 @Composable
 fun GlanceClockHeader(
     isDarkTheme: Boolean,
     isBlurEnabled: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    timeProvider: () -> LocalDateTime = { LocalDateTime.now() }
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
+    var currentTime by remember { mutableStateOf(timeProvider()) }
 
-    // Refresh immediately when app resumes from background or device wakes
-    DisposableEffect(lifecycleOwner) {
+    // Register broadcast receiver for system time & timezone changes and lifecycle observer for ON_RESUME
+    DisposableEffect(context, lifecycleOwner) {
+        val timeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                currentTime = timeProvider()
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_TICK)
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+        }
+        context.registerReceiver(timeReceiver, filter)
+
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                currentTime = LocalDateTime.now()
+                currentTime = timeProvider()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+
         onDispose {
+            try {
+                context.unregisterReceiver(timeReceiver)
+            } catch (e: Exception) {
+                // Ignore if not registered
+            }
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -90,26 +137,20 @@ fun GlanceClockHeader(
     // Schedule updates exactly at next minute boundary
     LaunchedEffect(Unit) {
         while (true) {
-            val now = LocalDateTime.now()
+            val now = timeProvider()
             currentTime = now
-            val seconds = now.second
-            val millis = now.nano / 1_000_000
-            val delayMillis = ((60 - seconds) * 1000L - millis).coerceAtLeast(100L)
+            val delayMillis = ClockFormatter.calculateMillisToNextMinute(now)
             delay(delayMillis)
         }
     }
 
     val is24HourFormat = remember(context) { DateFormat.is24HourFormat(context) }
-    val timePattern = if (is24HourFormat) "HH:mm" else "h:mm"
-
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()) }
-    val timeFormatter = remember(timePattern) { DateTimeFormatter.ofPattern(timePattern, Locale.getDefault()) }
 
     val dateString = remember(currentTime.dayOfYear, currentTime.year) {
-        currentTime.format(dateFormatter)
+        ClockFormatter.formatDate(currentTime)
     }
     val timeString = remember(currentTime.minute, currentTime.hour, is24HourFormat) {
-        currentTime.format(timeFormatter)
+        ClockFormatter.formatTime(currentTime, is24HourFormat)
     }
 
     val textColor = if (isDarkTheme) Color.White else Color.White
