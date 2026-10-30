@@ -156,14 +156,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+    fun requestDefaultHomeRole() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+            if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
+                if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)) {
+                    val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)
+                    startActivity(intent)
+                    return
+                }
+            }
+        }
+        try {
+            val intent = Intent(android.provider.Settings.ACTION_HOME_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+            startActivity(intent)
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         widgetHostManager.startListening()
+        viewModel.registerPackageReceiver()
     }
 
     override fun onStop() {
         super.onStop()
         widgetHostManager.stopListening()
+        viewModel.unregisterPackageReceiver()
     }
 
     private fun requestAddWidget(info: AppWidgetProviderInfo) {

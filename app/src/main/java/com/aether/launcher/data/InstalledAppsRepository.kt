@@ -1,23 +1,28 @@
 package com.aether.launcher.data
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import androidx.collection.LruCache
 import com.aether.launcher.data.model.AppCategory
 import com.aether.launcher.data.model.AppItem
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class InstalledAppsRepository(private val context: Context) {
 
     private val _installedApps = MutableStateFlow<List<AppItem>>(emptyList())
     val installedApps: StateFlow<List<AppItem>> = _installedApps.asStateFlow()
+
+    private var packageReceiver: BroadcastReceiver? = null
 
     // Icon bitmap cache to prevent redundant PackageItemInfo.loadIcon allocations
     private val iconCache = object : LruCache<String, Bitmap>(50 * 1024 * 1024) { // 50MB max
@@ -59,11 +64,48 @@ class InstalledAppsRepository(private val context: Context) {
         _installedApps.value = appList
     }
 
-    fun launchApp(app: AppItem) {
-        val intent = context.packageManager.getLaunchIntentForPackage(app.packageName)
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
+    fun registerPackageReceiver() {
+        if (packageReceiver != null) return
+        packageReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                MainScope().launch {
+                    loadInstalledApps()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addDataScheme("package")
+        }
+        context.registerReceiver(packageReceiver, filter)
+    }
+
+    fun unregisterPackageReceiver() {
+        packageReceiver?.let {
+            try {
+                context.unregisterReceiver(it)
+            } catch (e: Exception) {
+                // Ignore if not registered
+            }
+            packageReceiver = null
+        }
+    }
+
+    fun launchApp(app: AppItem): Boolean {
+        return try {
+            val intent = context.packageManager.getLaunchIntentForPackage(app.packageName)
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }
