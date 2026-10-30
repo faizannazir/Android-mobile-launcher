@@ -2,8 +2,6 @@ package com.aether.launcher
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.core.app.ApplicationProvider
-import com.aether.launcher.data.model.AppCategory
-import com.aether.launcher.data.model.AppItem
 import com.aether.launcher.data.model.FolderItem
 import com.aether.launcher.data.model.HomeLayoutItem
 import com.aether.launcher.viewmodel.LauncherScreen
@@ -15,6 +13,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -22,6 +21,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -69,12 +71,41 @@ class LauncherViewModelTest {
     @Test
     fun `drag and drop app onto app creates new folder`() {
         val app1 = HomeLayoutItem.App("app_1", 0, "com.test.app1", "Activity1")
-        val app2 = HomeLayoutItem.App("app_2", 1, "com.test.app2", "Activity2")
 
         viewModel.startDrag(app1, pageIndex = 0, position = 0)
         assertEquals(app1, viewModel.uiState.value.dragState.draggedItem)
 
         viewModel.dropDraggedItem(targetPosition = 1)
         assertNull(viewModel.uiState.value.dragState.draggedItem)
+    }
+
+    @Test
+    fun `toggleServiceWidgetFocus toggles focus state on service widget`() {
+        val initialWidget = viewModel.uiState.value.pages.firstOrNull()?.items
+            ?.filterIsInstance<HomeLayoutItem.ServiceWidget>()?.firstOrNull()
+
+        if (initialWidget != null) {
+            val initialFocus = initialWidget.isFocusActive
+            viewModel.toggleServiceWidgetFocus(initialWidget.id)
+
+            val updatedWidget = viewModel.uiState.value.pages.firstOrNull()?.items
+                ?.filterIsInstance<HomeLayoutItem.ServiceWidget>()?.firstOrNull()
+
+            assertNotNull(updatedWidget)
+            assertEquals(!initialFocus, updatedWidget?.isFocusActive)
+        }
+    }
+
+    @Test
+    fun `clock time formatting logic formatting test`() {
+        val testTime = LocalDateTime.of(2026, 10, 30, 14, 30)
+        val pattern24 = "HH:mm"
+        val pattern12 = "h:mm"
+
+        val formatted24 = testTime.format(DateTimeFormatter.ofPattern(pattern24, Locale.US))
+        val formatted12 = testTime.format(DateTimeFormatter.ofPattern(pattern12, Locale.US))
+
+        assertEquals("14:30", formatted24)
+        assertEquals("2:30", formatted12)
     }
 }

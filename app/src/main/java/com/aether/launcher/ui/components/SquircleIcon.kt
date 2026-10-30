@@ -1,6 +1,7 @@
 package com.aether.launcher.ui.components
 
 import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,13 +51,19 @@ fun SquircleIcon(
     isBlurEnabled: Boolean = true
 ) {
     val bitmap = remember(iconDrawable) {
-        iconDrawable?.let {
-            val targetSize = 192
-            val width = if (it.intrinsicWidth > 0) it.intrinsicWidth else targetSize
-            val height = if (it.intrinsicHeight > 0) it.intrinsicHeight else targetSize
-            it.toBitmap(width = width, height = height, config = Bitmap.Config.ARGB_8888)
+        iconDrawable?.let { drawable ->
+            if (drawable is BitmapDrawable && drawable.bitmap != null && !drawable.bitmap.isRecycled) {
+                drawable.bitmap
+            } else {
+                val targetSize = 192
+                val w = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else targetSize
+                val h = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else targetSize
+                drawable.toBitmap(width = w, height = h, config = Bitmap.Config.ARGB_8888)
+            }
         }
     }
+
+    val labelColor = if (isDarkTheme) Color.White else Color.White
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -110,7 +117,7 @@ fun SquircleIcon(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = Color.White,
+                color = labelColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center

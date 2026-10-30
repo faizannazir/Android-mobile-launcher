@@ -43,7 +43,8 @@ fun HarmonyServiceWidget(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val textColor = Color.White
+    val textColor = if (isDarkTheme) Color.White else Color(0xFF191C1E)
+    val accentColor = if (isDarkTheme) Color(0xFF00FBFF) else Color(0xFF0284C7)
 
     Box(
         modifier = modifier
@@ -70,7 +71,7 @@ fun HarmonyServiceWidget(
                     Icon(
                         imageVector = Icons.Rounded.Widgets,
                         contentDescription = "Service Control",
-                        tint = Color(0xFF00FBFF),
+                        tint = accentColor,
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
@@ -83,7 +84,7 @@ fun HarmonyServiceWidget(
                 Box(
                     modifier = Modifier
                         .size(8.dp)
-                        .background(Color(0xFF00FBFF), RoundedCornerShape(4.dp))
+                        .background(accentColor, RoundedCornerShape(4.dp))
                 )
             }
 
@@ -109,7 +110,7 @@ fun HarmonyServiceWidget(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Focus Toggle Button
+                // Focus Toggle Button (Launcher Focus State)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -122,12 +123,12 @@ fun HarmonyServiceWidget(
                             blurEnabled = isBlurEnabled,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = "Focus Mode",
-                        tint = if (widgetItem.isFocusActive) Color(0xFF00FBFF) else textColor.copy(alpha = 0.4f),
+                        contentDescription = "Launcher Focus Mode",
+                        tint = if (widgetItem.isFocusActive) accentColor else textColor.copy(alpha = 0.4f),
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
@@ -159,7 +160,7 @@ fun HarmonyServiceWidget(
                             blurEnabled = isBlurEnabled,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,

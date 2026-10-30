@@ -2,6 +2,7 @@ package com.aether.launcher.ui.screens
 
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
+import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,9 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.aether.launcher.data.model.AppItem
 import com.aether.launcher.data.model.FolderItem
 import com.aether.launcher.data.model.HomeLayoutItem
@@ -63,24 +69,50 @@ fun GlanceClockHeader(
     isBlurEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000L)
-            currentTime = LocalDateTime.now()
+    // Refresh immediately when app resumes from background or device wakes
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentTime = LocalDateTime.now()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
+    // Schedule updates exactly at next minute boundary
+    LaunchedEffect(Unit) {
+        while (true) {
+            val now = LocalDateTime.now()
+            currentTime = now
+            val seconds = now.second
+            val millis = now.nano / 1_000_000
+            val delayMillis = ((60 - seconds) * 1000L - millis).coerceAtLeast(100L)
+            delay(delayMillis)
+        }
+    }
+
+    val is24HourFormat = remember(context) { DateFormat.is24HourFormat(context) }
+    val timePattern = if (is24HourFormat) "HH:mm" else "h:mm"
+
     val dateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()) }
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
+    val timeFormatter = remember(timePattern) { DateTimeFormatter.ofPattern(timePattern, Locale.getDefault()) }
 
     val dateString = remember(currentTime.dayOfYear, currentTime.year) {
         currentTime.format(dateFormatter)
     }
-    val timeString = remember(currentTime.minute, currentTime.hour) {
+    val timeString = remember(currentTime.minute, currentTime.hour, is24HourFormat) {
         currentTime.format(timeFormatter)
     }
+
+    val textColor = if (isDarkTheme) Color.White else Color.White
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -96,7 +128,7 @@ fun GlanceClockHeader(
             Text(
                 text = dateString,
                 style = MaterialTheme.typography.titleSmall,
-                color = Color.White.copy(alpha = 0.95f)
+                color = textColor.copy(alpha = 0.95f)
             )
 
             Row(
@@ -113,13 +145,13 @@ fun GlanceClockHeader(
                 Icon(
                     imageVector = Icons.Rounded.Schedule,
                     contentDescription = "System Clock",
-                    tint = Color(0xFF00FBFF),
+                    tint = if (isDarkTheme) Color(0xFF00FBFF) else Color(0xFF0284C7),
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
                     text = "  Aether",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White
+                    color = textColor
                 )
             }
         }
@@ -133,7 +165,7 @@ fun GlanceClockHeader(
                 fontWeight = FontWeight.Light,
                 letterSpacing = (-2).sp
             ),
-            color = Color.White,
+            color = textColor,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
     }
